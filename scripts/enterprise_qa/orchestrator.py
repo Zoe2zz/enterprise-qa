@@ -95,6 +95,18 @@ class QAEngine:
             names = "、".join(e["name"] for e in emps)
             return f"{dept}的在职员工（共{len(emps)}人）：{names}\n\n> 来源：Employees 表"
 
+        # — 员工 ID 查询（如 "查一下EMP-999"）—
+        import re as _re
+        emp_id_match = _re.search(r'(EMP-\d+)', question)
+        if emp_id_match:
+            emp_id = emp_id_match.group(1)
+            emp_by_id = self.db.get_employee_by_id(emp_id)
+            if emp_by_id:
+                emp_info = f"姓名：{emp_by_id['name']}，部门：{emp_by_id['department']}，职级：{emp_by_id['level']}"
+                return f"{emp_info}\n\n> 来源：Employees 表"
+            else:
+                return f"未找到员工「{emp_id}」。"
+
         # — 全局查询 —
         if "离职" in question:
             resigned = self.db.get_resigned_employees()
@@ -169,13 +181,28 @@ class QAEngine:
     # ═══════════════════════════════════════════════════════════════
 
     def _handle_kb_only(self, question: str, history_text: str = "") -> str:
-        """BM25 搜索 → 提取关键信息 → 生成自然语言回答。"""
+        """BM25 搜索 → 过滤 → 生成自然语言回答。"""
+        # 检查问题中是否包含员工名单外的未知名称/ID
+        unknown_entity = self._detect_unknown_entity(question)
+
         results = self.kb.search(question, top_k=3)
+
         if not results:
-            return f"未找到与「{question}」相关的信息。"
+            msg = f"未找到与「{question}」相关的信息。"
+            if unknown_entity:
+                msg = f"未找到「{unknown_entity}」的相关信息。"
+            return msg
+
+        # 移除分数为 0 的邻居块和低分结果，最多保留 3 个
+        filtered = [r for r in results if r.get("score", 0) > 0.1][:3]
+        if not filtered:
+            filtered = results[:1]
 
         parts = []
-        for r in results:
+        if unknown_entity:
+            parts.append(f"未找到与「{unknown_entity}」相关的员工或信息。")
+
+        for r in filtered:
             source = r["source"]
             section = r["section"]
             text = r["text"]
@@ -355,7 +382,7 @@ class QAEngine:
 
     @staticmethod
     def _fmt_promotion_comparison(name: str, emp: dict, db_data: str, conditions: list[dict]) -> str:
-        """晋升条件对比：可读的表格格式，避免原始 markdown dump。"""
+        """晋升条件对比：可读的表格格式，自动判断是否符合。"""
         lines = [
             f"『{name}』晋升条件对比",
             "",
@@ -375,6 +402,33 @@ class QAEngine:
             sources = set(c["source"] for c in conditions)
             for src in sources:
                 lines.append(f"> 来源：{src}")
+
+            # 自动判断是否符合（基于 KPI 和项目数）
+            import re as _re
+            kpi_ok = None
+            proj_ok = None
+            # 从 db_data 中提取 KPI 平均值
+            kpi_match = _re.search(r'平均[：:]\s*([\d.]+)分', db_data)
+            if kpi_match:
+                avg_kpi = float(kpi_match.group(1))
+                kpi_ok = avg_kpi >= 85
+            # 从 db_data 中提取主导/核心项目数
+            proj_match = _re.search(r'主导/核心项目数[：:]\s*(\d+)', db_data)
+            if proj_match:
+                proj_count = int(proj_match.group(1))
+                proj_ok = proj_count >= 3
+
+            verdict_parts = []
+            if kpi_ok is not None:
+                verdict_parts.append(f"KPI平均{avg_kpi:.1f}分，{'达到' if kpi_ok else '未达到'}85分要求")
+            if proj_ok is not None:
+                verdict_parts.append(f"主导/核心项目{proj_count}个，{'达到' if proj_ok else '未达到'}3个要求")
+
+            if verdict_parts:
+                all_pass = (kpi_ok is None or kpi_ok) and (proj_ok is None or proj_ok)
+                lines.append("")
+                lines.append(f"结论：{'、'.join(verdict_parts)}。")
+                lines.append(f"因此，{name}{'' if all_pass else '不'}符合当前晋升条件。")
         else:
             lines.append("（未找到结构化晋升条件，详见知识库原始文档）")
 
@@ -475,6 +529,26 @@ class QAEngine:
         直接用原问题搜索，人名不影响 BM25 匹配。
         """
         return question
+
+    @staticmethod
+    def _detect_unknown_entity(question: str) -> str | None:
+        """检测问题中是否有疑似名称但不在员工名单中的词。
+        用于边界情况（如 xyzabc123），避免返回不相关结果。"""
+        # 提取连续的字母+数字组合（可能是 ID 或假名）
+        import re as _re
+        tokens = _re.findall(r'[a-zA-Z][a-zA-Z0-9_-]{2,}', question)
+        for token in tokens:
+            if token.upper() not in [emp.upper() for emp in EMPLOYEE_NAMES]:
+                # 跳过常见疑问词/英文关键词
+                skip_words = {"select", "from", "where", "drop", "delete", "insert", "update",
+                             "alter", "create", "exec", "table", "into", "values", "set",
+                             "and", "or", "not", "in", "like", "order", "by", "group",
+                             "having", "limit", "off", "null", "as", "on", "is", "asc",
+                             "desc", "count", "sum", "avg", "min", "max", "join", "left",
+                             "right", "inner", "outer", "index", "key", "primary", "emp"}
+                if token.lower() not in skip_words:
+                    return token
+        return None
 
     @staticmethod
     def _fmt_projects(projs: list[dict]) -> str:
