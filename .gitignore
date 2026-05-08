@@ -203,6 +203,9 @@ cython_debug/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
+# QA conversation history (auto-generated, user-specific)
+scripts/qa_history.json
+
 # Ruff stuff:
 .ruff_cache/
 

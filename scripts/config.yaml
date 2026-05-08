@@ -1,0 +1,5 @@
+database:
+  path: ./enterprise.db
+
+knowledge_base:
+  root_path: ./knowledge
