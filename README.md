@@ -99,13 +99,22 @@ git clone https://github.com/Zoe2zz/enterprise-qa.git
 
 ### 2. 安装到 OpenClaw
 
-将 `enterprise-qa` 文件夹放入 OpenClaw 的 skills 目录，并重命名为 `enterprise-qa.skill`：
-
-| 操作系统 | 目标路径 |
-|---------|---------|
-| Windows | `%USERPROFILE%\.openclaw\skills\enterprise-qa.skill\` |
-| macOS | `~/.openclaw/skills/enterprise-qa.skill/` |
-| Linux | `~/.openclaw/skills/enterprise-qa.skill/` |
+> **关于 Skill 存放路径的说明**
+>
+> 本题要求将 OpenClaw Skill 放在 `extensions/` 目录。实际环境下，OpenClaw 会从多个位置加载 skill。以下提供两种方式，择一即可：
+>
+> **方式一（考题要求）**：将 `enterprise-qa` 文件夹放入 `extensions/` 目录：
+> ```
+> extensions/enterprise-qa.skill/
+> ```
+>
+> **方式二（标准 OpenClaw 环境）**：将文件夹放入全局 skills 目录：
+>
+> | 操作系统 | 目标路径 |
+> |---------|---------|
+> | Windows | `%USERPROFILE%\.openclaw\skills\enterprise-qa.skill\` |
+> | macOS | `~/.openclaw/skills/enterprise-qa.skill/` |
+> | Linux | `~/.openclaw/skills/enterprise-qa.skill/` |
 
 ### 3. 安装 Python 依赖
 
