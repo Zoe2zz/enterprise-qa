@@ -9,19 +9,19 @@ This system employs a layered Agent architecture for high-frequency enterprise k
 ## Architecture
 
 ```mermaid
-graph LR
-    U([User Query @qa]) --> S[Security Agent<br/>Input sanitization / SQL injection filter]
-    S --> I[Intent Agent<br/>Rule-based parsing / entity extraction / intent classification]
-    I --> C{Query type}
-    C -->|Structured data| D[Database Agent<br/>Multi-table join query<br/>Schema reasoning]
-    C -->|Unstructured docs| R[Retrieval Agent<br/>BM25 semantic recall<br/>Cross-doc validation]
-    C -->|Hybrid| M[Parallel dispatch]
+graph TD
+    U[User Query] --> S[Security Agent]
+    S --> I[Intent Agent]
+    I --> C{Query Type}
+    C -->|Structured| D[Database Agent]
+    C -->|Unstructured| R[Retrieval Agent]
+    C -->|Hybrid| M[Parallel Dispatch]
     M --> D
     M --> R
-    D --> F[Fusion Agent<br/>Multi-source fusion / conflict resolution / source attribution]
+    D --> F[Fusion Agent]
     R --> F
-    F --> O([Generated answer<br/>with source citation])
-    F --> H[(Context Manager<br/>10-turn dialog history<br/>Long-context state management)]
+    F --> O[Answer with Citations]
+    F --> H[Context Manager]
     H --> I
     style D fill:#f9f,stroke:#333
     style F fill:#bbf,stroke:#333
