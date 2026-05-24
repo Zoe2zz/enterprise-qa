@@ -1,36 +1,36 @@
-# 测试用例一览（T01-T12）
+# Test Cases (T01-T12)
 
-## 基础查询
+## Basic Queries
 
-| ID | 问题 | 预期答案要点 | 数据源 |
-|----|------|-------------|--------|
-| T01 | 张三的部门是什么？ | 研发部 | employees 表 |
-| T02 | 李四的上级是谁？ | CEO (EMP-000) | employees 表 |
-| T03 | 年假怎么计算？ | 满 1 年 5 天，每年 +1，上限 15 天 | hr_policies.md |
-| T04 | 迟到几次扣钱？ | 4-6 次开始扣，50 元/次 | hr_policies.md |
+| ID | Question | Expected Answer | Data Source |
+|----|----------|----------------|-------------|
+| T01 | What is Zhang San's department? | R&D Dept | employees table |
+| T02 | Who is Li Si's manager? | CEO (EMP-000) | employees table |
+| T03 | How is annual leave calculated? | 1 year = 5 days, +1 per year, max 15 | hr_policies.md |
+| T04 | How much is deducted for lateness? | 4-6 times starts deduction, 50 CNY each | hr_policies.md |
 
-## 关联查询
+## Correlation Queries
 
-| ID | 问题 | 预期答案要点 | 数据源 |
-|----|------|-------------|--------|
-| T05 | 张三负责哪些项目？ | 4 个项目及角色 | projects + project_members |
-| T06 | 研发部有多少人？ | 4 人（张三、李四、钱七、周九） | employees |
-| T07 | 王五符合 P5 晋升 P6 条件吗？ | 不符合（KPI 80<85，项目 1<3） | DB + promotion_rules.md |
-| T08 | 张三 2 月迟到几次？ | 2 次 | attendance |
+| ID | Question | Expected Answer | Data Source |
+|----|----------|----------------|-------------|
+| T05 | What projects is Zhang San working on? | 4 projects with roles | projects + project_members |
+| T06 | How many people in R&D? | 4 (Zhang San, Li Si, Qian Qi, Zhou Jiu) | employees |
+| T07 | Is Wang Wu eligible for P5→P6 promotion? | No (KPI 80<85, projects 1<3) | DB + promotion_rules.md |
+| T08 | How many times was Zhang San late in Feb? | 2 times | attendance |
 
-## 边界情况
+## Edge Cases
 
-| ID | 问题 | 预期行为 |
-|----|------|----------|
-| T09 | 查一下 EMP-999 | 友好提示无此员工 |
-| T10 | 最近有什么事？ | 返回最近会议纪要 + 活跃项目 |
-| T11 | SELECT * FROM users WHERE '1'='1 | 拦截 SQL 注入 |
-| T12 | xyzabc123 怎么报销 | 无相关信息，不编造 |
+| ID | Question | Expected Behavior |
+|----|----------|------------------|
+| T09 | Look up EMP-999 | Friendly message: employee not found |
+| T10 | What's new recently? | Return recent meeting notes + active projects |
+| T11 | SELECT * FROM users WHERE '1'='1 | Block SQL injection |
+| T12 | How does xyzabc123 file expenses? | No relevant info, don't fabricate |
 
-## 多轮对话
+## Multi-Turn Dialog
 
-| 场景 | 操作 | 预期 |
-|------|------|------|
-| 追问继承 | "李四的部门是什么？" → "那张三呢？" | 继承查询部门意图，返回研发部 |
-| 模糊拒绝 | "你好" | NLU 提取空实体 → 追问澄清 |
-| 命令拦截 | "python main.py" | 检测到终端命令 → 提示用自然语言 |
+| Scenario | Action | Expected |
+|----------|--------|----------|
+| Follow-up inheritance | "What is Li Si's department?" → "What about Zhang San?" | Inherit department intent, return R&D |
+| Vague rejection | "Hello" | NLU extracts empty entity → prompt clarification |
+| Command blocking | "python main.py" | Detected shell command → prompt natural language |

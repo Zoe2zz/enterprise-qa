@@ -1,5 +1,5 @@
-"""QA 提问工具 — 供 OpenClaw 代理调用。
-支持对话历史管理，不包含任何人设。
+"""QA query tool — callable by OpenClaw agents.
+Supports dialog history management, no persona.
 """
 import sys, os, json
 
@@ -23,8 +23,8 @@ def save_history(history):
 def format_history(history):
     lines = []
     for item in history:
-        lines.append(f"用户：{item['q']}")
-        lines.append(f"助手：{item['a']}")
+        lines.append(f"User: {item['q']}")
+        lines.append(f"Assistant: {item['a']}")
     return "\n".join(lines)
 
 def ask(question, engine):
@@ -37,7 +37,7 @@ def ask(question, engine):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("用法: python qa_ask.py '你的问题'")
+        print("Usage: python qa_ask.py 'your question'")
         sys.exit(1)
 
     engine = create_qa_engine(os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.yaml"))

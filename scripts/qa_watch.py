@@ -1,4 +1,4 @@
-"""常驻 QA 引擎 — 监控 qa_in.txt，输出到 qa_out.txt"""
+"""Resident QA engine — watches qa_in.txt, writes to qa_out.txt"""
 import sys, os, json, time
 
 sys.stdout.reconfigure(encoding='utf-8')
@@ -24,7 +24,7 @@ def save_history(history):
         json.dump(history[-MAX_HISTORY:], f, ensure_ascii=False, indent=2)
 
 def fmt_history(history):
-    return "\n".join(f"用户：{h['q']}\n助手：{h['a']}" for h in history)
+    return "\n".join(f"User: {h['q']}\nAssistant: {h['a']}" for h in history)
 
 print("READY", flush=True)
 

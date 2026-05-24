@@ -1,27 +1,27 @@
 # Enterprise QA Agent Suite
 
-基于多智能体协同的企业知识推理引擎，支持长链推理、多源数据融合与复杂业务查询。
+A multi-agent collaborative enterprise knowledge reasoning engine supporting long-chain reasoning, multi-source data fusion, and complex business queries.
 
 ## Overview
 
-本系统采用分层Agent架构，面向企业内部高频知识查询场景。通过多个垂直Agent协作，解决传统企业问答系统"只能查单一数据源"、"无法理解跨系统关联问题"、"缺乏安全与溯源能力"三大痛点。
+This system employs a layered Agent architecture for high-frequency enterprise knowledge query scenarios. Through collaboration of multiple vertical Agents, it solves three pain points of traditional enterprise QA systems: "single data source limitation", "inability to understand cross-system correlation queries", and "lack of security and traceability".
 
 ## Architecture
 
 ```mermaid
 graph LR
-    U([用户提问 @qa]) --> S[Security Agent<br/>输入安全检测 / SQL注入过滤]
-    S --> I[Intent Agent<br/>规则语义解析 / 实体提取 / 意图分类]
-    I --> C{查询类型判断}
-    C -->|结构化数据| D[Database Agent<br/>多表关联查询<br/>Schema推理]
-    C -->|非结构化文档| R[Retrieval Agent<br/>BM25语义召回<br/>多文档交叉验证]
-    C -->|混合查询| M[并行调度]
+    U([User Query @qa]) --> S[Security Agent<br/>Input sanitization / SQL injection filter]
+    S --> I[Intent Agent<br/>Rule-based parsing / entity extraction / intent classification]
+    I --> C{Query type}
+    C -->|Structured data| D[Database Agent<br/>Multi-table join query<br/>Schema reasoning]
+    C -->|Unstructured docs| R[Retrieval Agent<br/>BM25 semantic recall<br/>Cross-doc validation]
+    C -->|Hybrid| M[Parallel dispatch]
     M --> D
     M --> R
-    D --> F[Fusion Agent<br/>多源结果融合 / 冲突消解 / 来源标注]
+    D --> F[Fusion Agent<br/>Multi-source fusion / conflict resolution / source attribution]
     R --> F
-    F --> O([生成回答<br/>含溯源标注])
-    F --> H[(Context Manager<br/>10轮对话历史<br/>长上下文状态保持)]
+    F --> O([Generated answer<br/>with source citation])
+    F --> H[(Context Manager<br/>10-turn dialog history<br/>Long-context state management)]
     H --> I
     style D fill:#f9f,stroke:#333
     style F fill:#bbf,stroke:#333
@@ -30,53 +30,53 @@ graph LR
 ## Core Agents
 
 ### Security Agent
-- SQL注入防护、终端命令拦截
-- 敏感数据访问权限校验
-- 输入合规性审查
+- SQL injection prevention, command injection blocking
+- Sensitive data access permission validation
+- Input compliance check
 
 ### Intent Agent
-- 基于关键词规则的语义解析与实体提取
-- 查询意图分类：DB_ONLY / KB_ONLY / HYBRID / AMBIGUOUS
-- 上下文继承（支持连续追问）
+- Rule-based semantic parsing and entity extraction
+- Intent classification: DB_ONLY / KB_ONLY / HYBRID / AMBIGUOUS
+- Context inheritance (supports follow-up questions)
 
 ### Database Agent
-- **多表关联查询链路**：实体提取 → Schema匹配 → SQL生成 → 执行 → 结果格式化
-- 单次复杂查询涉及 employees / projects / attendance / performance_reviews 四表关联
-- 支持跨表关联查询（如"王五符合晋升条件吗"需同时查绩效表+项目表+晋升制度）
+- **Multi-table join query chain**: entity extraction → schema matching → SQL generation → execution → result formatting
+- Complex queries span employees / projects / attendance / performance_reviews (4 tables)
+- Supports cross-table correlation queries (e.g., "Is Wang Wu eligible for promotion?" requires checking performance + projects + policies)
 
 ### Retrieval Agent
-- BM25 + 邻居块上下文召回
-- 多文档交叉验证与去重
-- 支持Markdown制度文档、会议纪要等非结构化数据
+- BM25 + neighbor context recall
+- Cross-document validation and deduplication
+- Supports Markdown policy documents, meeting notes, and other unstructured data
 
 ### Fusion Agent
-- 多源信息冲突消解（如数据库考勤记录 vs 制度文档解释）
-- 自动标注数据来源（`来源：Employees 表` / `来源：hr_policies.md §3.2`）
-- 晋升条件自动匹配与结论判定
+- Multi-source conflict resolution (e.g., attendance records vs. policy interpretation)
+- Automatic source citation (`Source: Employees table` / `Source: hr_policies.md §3.2`)
+- Promotion condition auto-matching and verdict generation
 
 ### Context Manager
-- 维护最近10轮对话状态
-- 长上下文窗口管理
-- 多轮链路的中间状态保持
+- Maintains last 10 turns of dialog state
+- Long-context window management
+- Intermediate state persistence for multi-turn reasoning chains
 
 ## Key Scenarios
 
-| 场景 | 涉及Agent | Token消耗特征 |
-|------|----------|--------------|
-| 单点查询（如"王五是谁"） | Security → Intent → Database | ~2k Token |
-| 制度咨询（如"年假怎么算"） | Security → Intent → Retrieval | ~4k Token |
-| **混合推理（如"王五符合晋升条件吗"）** | **Intent → Database + Retrieval → Fusion** | **~15k Token，含多表Schema推理** |
-| 连续追问（上下文继承） | Context Manager → Intent → ... | 逐轮累积 |
+| Scenario | Agents Involved | Token Consumption |
+|----------|----------------|-------------------|
+| Simple query (e.g., "Who is Wang Wu") | Security → Intent → Database | ~2k Token |
+| Policy inquiry (e.g., "How does annual leave work?") | Security → Intent → Retrieval | ~4k Token |
+| **Hybrid reasoning (e.g., "Is Wang Wu eligible for promotion?")** | **Intent → Database + Retrieval → Fusion** | **~15k Token, multi-table schema reasoning** |
+| Follow-up questions (context inheritance) | Context Manager → Intent → ... | Cumulative per turn |
 
 ## Installation
 
-OpenClaw Skill 标准安装：
+OpenClaw Skill standard installation:
 
 ```bash
-# 方式一：extensions目录（开发环境）
+# Option 1: extensions directory (development)
 cp -r enterprise-qa extensions/enterprise-qa.skill
 
-# 方式二：全局skills目录（生产环境）
+# Option 2: global skills directory (production)
 cp -r enterprise-qa ~/.openclaw/skills/enterprise-qa.skill/
 ```
 
@@ -85,14 +85,14 @@ cd enterprise-qa/scripts
 pip install -r requirements.txt  # Python 3.10+
 ```
 
-验证：
+Verify:
 ```
-@qa 王五是谁？
+@qa Who is Wang Wu?
 ```
 
 ## Configuration
 
-编辑 `scripts/config.yaml`：
+Edit `scripts/config.yaml`:
 
 ```yaml
 database:
@@ -106,25 +106,25 @@ knowledge_base:
 
 ```
 enterprise-qa/
-├── SKILL.md                  # OpenClaw Agent操作说明书
-├── README.md                 # 本文档
+├── SKILL.md                  # OpenClaw Agent operation manual
+├── README.md                 # This document
 ├── scripts/
-│   ├── qa_ask.py            # 入口调度脚本
-│   ├── config.yaml          # 数据源配置
-│   ├── enterprise.db        # 结构化数据(SQLite)
-│   ├── qa_history.json      # 对话上下文状态
-│   ├── enterprise_qa/       # Agent引擎核心代码
+│   ├── qa_ask.py            # Entry point script
+│   ├── config.yaml          # Data source config
+│   ├── enterprise.db        # Structured data (SQLite)
+│   ├── qa_history.json      # Dialog context state
+│   ├── enterprise_qa/       # Agent engine core
 │   │   ├── safety.py        # Security Agent
 │   │   ├── intent.py        # Intent Agent
 │   │   ├── db_engine.py     # Database Agent
 │   │   ├── kb_engine.py     # Retrieval Agent
 │   │   ├── orchestrator.py  # Orchestrator + Fusion Agent
-│   │   └── config.py        # 配置加载
-│   ├── knowledge/           # 非结构化知识库
-│   └── tests/               # 单元测试
+│   │   └── config.py        # Configuration loader
+│   ├── knowledge/           # Unstructured knowledge base
+│   └── tests/               # Unit tests
 └── references/
-    ├── architecture.md      # 架构设计文档
-    └── test-cases.md        # 测试用例与验收标准
+    ├── architecture.md      # Architecture design doc
+    └── test-cases.md        # Test cases and acceptance criteria
 ```
 
 ## Testing
@@ -136,8 +136,8 @@ python -m pytest tests/ -v
 
 ## Changelog
 
-- `v0.2.0` — 多Agent并行调度与长上下文融合查询
-- `v0.1.0` — Core QA Agent引擎，支持NL→SQL与BM25检索
+- `v0.2.0` — Multi-Agent parallel dispatch and long-context fusion queries
+- `v0.1.0` — Core QA Agent engine with NL→SQL and BM25 retrieval
 
 ## License
 
