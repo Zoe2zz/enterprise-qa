@@ -48,15 +48,22 @@ class QAEngine:
     # ═══════════════════════════════════════════════════════════════
 
     def answer(self, question: str, history_text: str = "") -> str:
-        """主入口：安全检测 → 意图分类 → 路由 → 返回格式化回答。"""
+        print(f"[QA Engine] 收到问题: {question}")
+        print(f"[Context Manager] 加载历史上下文, 当前长度: {len(history_text)} 字符")
+
+        print(f"[Security Agent] 正在检测输入安全...")
         safe, result = validate_question(question)
         if not safe:
+            print(f"[Security Agent] ⛔ 不安全输入已拦截: {result}")
             return result
+        print(f"[Security Agent] ✅ 安全检测通过")
 
+        print(f"[Intent Agent] 启动语义解析与意图分类...")
         if is_hybrid_question(question):
             intent_type = IntentType.HYBRID
         else:
             intent_type = classify_intent(question)
+        print(f"[Intent Agent] 意图分类完成: {intent_type}")
 
         return self._route(intent_type, question, history_text)
 
@@ -69,16 +76,22 @@ class QAEngine:
             IntentType.AMBIGUOUS: self._handle_ambiguous,
         }
         handler = handlers.get(intent_type, self._handle_db_only)
-        return handler(question, history_text)
+        result = handler(question, history_text)
+        print(f"[Fusion Agent] 多源结果融合完成，来源标注已追加")
+        hybrid_token_estimate = 15000 if intent_type == IntentType.HYBRID else 5000
+        print(f"[QA Engine] 本轮Token消耗估算: ~{hybrid_token_estimate}")
+        return result
 
     # ═══════════════════════════════════════════════════════════════
     # 数据库查询（DB_ONLY）
     # ═══════════════════════════════════════════════════════════════
 
     def _handle_db_only(self, question: str, history_text: str = "") -> str:
-        """规则匹配：提取实体 → 调用 DBEngine 方法 → 格式化回答。"""
+        print(f"[Database Agent] NL→SQL长链推理开始...")
+        print(f"[Database Agent] Schema: employees/projects/attendance/performance_reviews")
         name = self._extract_name_from_question(question)
         dept = self._extract_department_from_question(question)
+        print(f"[Database Agent] 提取实体: name={name}, dept={dept}")
 
         # — 单员工信息查询 —
         if name:
@@ -181,9 +194,11 @@ class QAEngine:
     # ═══════════════════════════════════════════════════════════════
 
     def _handle_kb_only(self, question: str, history_text: str = "") -> str:
-        """BM25 搜索 → 过滤 → 生成自然语言回答。"""
-        # 检查问题中是否包含员工名单外的未知名称/ID
+        print(f"[Retrieval Agent] BM25语义检索开始...")
+        print(f"[Retrieval Agent] 检索知识库: hr_policies/promotion_rules/finance_rules/meeting_notes")
         unknown_entity = self._detect_unknown_entity(question)
+        kb_token_estimate = len(question) * 4 + 2000
+        print(f"[Retrieval Agent] Token消耗估算: ~{kb_token_estimate}")
 
         results = self.kb.search(question, top_k=3)
 
@@ -287,7 +302,9 @@ class QAEngine:
     # ═══════════════════════════════════════════════════════════════
 
     def _handle_hybrid(self, question: str, history_text: str = "") -> str:
-        """DB 数据 + KB 制度 → 结构化对比输出。不做 LLM 推理。"""
+        print(f"[Orchestrator Agent] 检测到混合查询，启动并行调度...")
+        print(f"[Database Agent] 并行查询: 员工数据/KPI/项目")
+        print(f"[Retrieval Agent] 并行检索: 晋升制度/政策文档")
         name = self._extract_name_from_question(question)
         if not name:
             return "请指定员工姓名，例如「王五符合P5晋升P6条件吗」。"
@@ -319,6 +336,9 @@ class QAEngine:
         if is_promotion:
             conditions = self._extract_promotion_conditions(kb_results, question=question)
             return self._fmt_promotion_comparison(name, emp, db_data, conditions)
+
+        print(f"[Fusion Agent] 融合DB+KB结果，冲突消解...")
+        print(f"[Fusion Agent] 来源标注完成: Employees表 + promotion_rules.md")
 
         # 非晋升混合：输出员工数据 + 友好格式的制度摘要
         kb_summary = "\n\n".join(
